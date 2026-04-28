@@ -3,7 +3,22 @@ import yt_dlp, os
 
 app = Flask(__name__)
 
-COOKIES_FILE = "cookies.txt"
+COOKIES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cookies.txt")
+
+@app.route("/check")
+def check():
+    exists = os.path.exists(COOKIES_FILE)
+    cwd = os.getcwd()
+    try:
+        files = os.listdir(cwd)
+    except:
+        files = []
+    return jsonify({
+        "cookies_exists": exists,
+        "cookies_path": COOKIES_FILE,
+        "cwd": cwd,
+        "files": files
+    })
 
 @app.route("/download", methods=["POST"])
 def download():
@@ -35,6 +50,16 @@ def download():
             return jsonify({
                 "status": "redirect",
                 "url": video_url,
+                "title": info.get("title"),
+                "thumb": info.get("thumbnail"),
+            })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)                "url": video_url,
                 "title": info.get("title"),
                 "thumb": info.get("thumbnail"),
             })
