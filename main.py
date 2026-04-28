@@ -55,10 +55,16 @@ def download():
 
     try:
         if audio_only:
+            # Best audio available
             fmt = "bestaudio/best"
         else:
-            # Use best available format — no strict format filtering
-            fmt = "best[ext=mp4]/best"
+            # Try exact quality first, then fallback to best available
+            fmt = (
+                "bestvideo[height<={}][ext=mp4]+bestaudio[ext=m4a]"
+                "/bestvideo[height<={}]+bestaudio"
+                "/best[height<={}]"
+                "/best"
+            ).format(quality, quality, quality)
 
         ydl_opts = {
             "format": fmt,
@@ -72,7 +78,10 @@ def download():
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            if "requested_formats" in info:
+
+            # Get the best URL from requested formats
+            if "requested_formats" in info and info["requested_formats"]:
+                # Pick the video stream (first one)
                 video_url = info["requested_formats"][0]["url"]
             else:
                 video_url = info.get("url")
@@ -82,6 +91,8 @@ def download():
                 "url": video_url,
                 "title": info.get("title"),
                 "thumb": info.get("thumbnail"),
+                "duration": info.get("duration"),
+                "uploader": info.get("uploader"),
             })
 
     except Exception as e:
