@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
-import yt_dlp, os
+import yt_dlp
+import os
 
 app = Flask(__name__)
 
 COOKIES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cookies.txt")
+
 
 @app.route("/check")
 def check():
@@ -11,7 +13,7 @@ def check():
     cwd = os.getcwd()
     try:
         files = os.listdir(cwd)
-    except:
+    except Exception:
         files = []
     return jsonify({
         "cookies_exists": exists,
@@ -19,6 +21,7 @@ def check():
         "cwd": cwd,
         "files": files
     })
+
 
 @app.route("/download", methods=["POST"])
 def download():
@@ -31,7 +34,10 @@ def download():
         return jsonify({"error": "url required"}), 400
 
     try:
-        fmt = "bestaudio/best" if audio_only else f"bestvideo[height<={quality}][ext=mp4]+bestaudio[ext=m4a]/best[height<={quality}][ext=mp4]/best"
+        if audio_only:
+            fmt = "bestaudio/best"
+        else:
+            fmt = "bestvideo[height<={}][ext=mp4]+bestaudio[ext=m4a]/best[height<={}][ext=mp4]/best".format(quality, quality)
 
         ydl_opts = {
             "format": fmt,
@@ -57,15 +63,6 @@ def download():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)                "url": video_url,
-                "title": info.get("title"),
-                "thumb": info.get("thumbnail"),
-            })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
