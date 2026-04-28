@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 COOKIES_FILE = "/app/cookies.txt"
 
+
 @app.route("/check")
 def check():
     exists = os.path.exists(COOKIES_FILE)
@@ -20,6 +21,26 @@ def check():
         "cwd": cwd,
         "files": files
     })
+
+
+@app.route("/test")
+def test():
+    try:
+        ydl_opts = {
+            "quiet": False,
+            "cookiefile": COOKIES_FILE,
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            },
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                download=False
+            )
+            return jsonify({"success": True, "title": info.get("title")})
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 @app.route("/download", methods=["POST"])
@@ -43,6 +64,9 @@ def download():
             "quiet": True,
             "no_warnings": True,
             "cookiefile": COOKIES_FILE,
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            },
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
