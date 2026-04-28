@@ -4,8 +4,7 @@ import os
 
 app = Flask(__name__)
 
-COOKIES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cookies.txt")
-
+COOKIES_FILE = "/app/cookies.txt"
 
 @app.route("/check")
 def check():
