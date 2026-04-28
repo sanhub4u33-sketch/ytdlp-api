@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAN MATE — Premium Downloader</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8cc7e;
+    --gold-dark: #8b6914;
+    --black: #06060a;
+    --dark: #0d0d12;
+    --card: #11111a;
+    --border: #1e1e2a;
+    --text: #f0ece0;
+    --muted: #6b6855;
+    --white: #faf8f2;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Luxury background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 90% 90%, rgba(201,168,76,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Fine grain texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px 100px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    padding: 70px 0 60px;
+    animation: fadeDown 1s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .crown {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .crown svg {
+    width: 36px;
+    height: 36px;
+    fill: var(--gold);
+    filter: drop-shadow(0 0 12px rgba(201,168,76,0.5));
+  }
+
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 12vw, 88px);
+    font-weight: 300;
+    letter-spacing: 14px;
+    text-transform: uppercase;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .logo span {
+    color: var(--gold);
+    font-style: italic;
+  }
+
+  .logo-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 16px 0 8px;
+  }
+
+  .logo-line::before,
+  .logo-line::after {
+    content: '';
+    flex: 1;
+    max-width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  .tagline {
+    margin-top: 14px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* ── PLATFORM TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    animation: fadeUp 0.8s 0.2s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .tab {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    background: var(--card);
+    color: var(--muted);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-right: 1px solid var(--border);
+  }
+
+  .tab:last-child { border-right: none; }
+  .tab svg { width: 16px; height: 16px; }
+
+  .tab.active {
+    background: rgba(201,168,76,0.08);
+    color: var(--gold);
+    box-shadow: inset 0 -2px 0 var(--gold);
+  }
+
+  .tab:hover:not(.active) {
+    background: rgba(255,255,255,0.02);
+    color: var(--text);
+  }
+
+  /* ── INPUT CARD ── */
+  .input-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 32px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.8s 0.3s cubic-bezier(0.16,1,0.3,1) both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .input-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.5;
+  }
+
+  .input-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .url-input {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 15px 20px;
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    letter-spacing: 0.5px;
+  }
+
+  .url-input::placeholder { color: var(--muted); }
+
+  .url-input:focus {
+    border-color: var(--gold-dark);
+    box-shadow: 0 0 0 1px rgba(201,168,76,0.15), inset 0 0 20px rgba(201,168,76,0.02);
+  }
+
+  .btn-fetch {
+    padding: 15px 28px;
+    border: 1px solid var(--gold-dark);
+    border-radius: 3px;
+    background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05));
+    color: var(--gold);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-fetch::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.2), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .btn-fetch:hover::before { opacity: 1; }
+  .btn-fetch:hover { box-shadow: 0 0 20px rgba(201,168,76,0.15); }
+  .btn-fetch:active { transform: scale(0.98); }
+  .btn-fetch:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: none;
+    width: 14px; height: 14px;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .spinner.show { display: inline-block; }
+
+  /* Error */
+  .error-box {
+    display: none;
+    margin-top: 16px;
+    padding: 12px 18px;
+    background: rgba(180,50,50,0.08);
+    border: 1px solid rgba(180,50,50,0.2);
+    border-radius: 3px;
+    font-size: 12px;
+    color: #c07070;
+    letter-spacing: 0.5px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .error-box.show { display: block; }
+
+  /* ── RESULT CARD ── */
+  .result-card {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.4;
+  }
+
+  .result-card.show { display: block; }
+
+  /* Thumbnail hero */
+  .thumb-hero {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+    filter: brightness(0.85);
+  }
+
+  .thumb-placeholder {
+    width: 100%;
+    height: 220px;
+    background: linear-gradient(135deg, #0d0d12, #1a1a22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .video-info-bar {
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .platform-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .platform-tag::before {
+    content: '';
+    width: 20px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  .video-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  .video-meta {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ── DOWNLOAD OPTIONS ── */
+  .download-section {
+    padding: 28px;
+  }
+
+  .section-title {
+    font-size: 9px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* Video quality grid */
+  .quality-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .quality-btn {
+    padding: 14px 10px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .quality-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(201,168,76,0.06);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .quality-btn:hover::before { opacity: 1; }
+  .quality-btn:hover { border-color: var(--gold-dark); color: var(--gold-light); }
+
+  .quality-btn .q-label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .quality-btn .q-sub { display: block; font-size: 9px; letter-spacing: 1px; color: var(--muted); }
+
+  /* Audio section */
+  .audio-strip {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .audio-btn {
+    width: 100%;
+    padding: 16px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+  }
+
+  .audio-btn:last-child { border-bottom: none; }
+  .audio-btn svg { width: 16px; height: 16px; color: var(--gold); flex-shrink: 0; }
+
+  .audio-btn:hover {
+    background: rgba(201,168,76,0.04);
+    color: var(--gold-light);
+  }
+
+  .audio-btn .a-title { flex: 1; }
+  .audio-btn .a-badge {
+    font-size: 9px;
+    padding: 3px 8px;
+    border: 1px solid var(--gold-dark);
+    border-radius: 2px;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  /* Picker grid (Instagram carousel) */
+  .picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .picker-item {
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+    display: block;
+  }
+
+  .picker-item:hover {
+    border-color: var(--gold-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  }
+
+  .picker-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+  }
+
+  .picker-label {
+    padding: 8px 10px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-align: center;
+    font-weight: 500;
+  }
+
+  /* ── FEATURES ── */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 32px;
+    animation: fadeUp 0.8s 0.5s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  .feat {
+    background: var(--card);
+    padding: 24px 20px;
+    text-align: center;
+  }
+
+  .feat-icon {
+    font-size: 20px;
+    margin-bottom: 10px;
+    filter: grayscale(0.3);
+  }
+
+  .feat-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .feat-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    animation: fadeUp 0.8s 0.6s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    letter-spacing: 8px;
+    color: var(--gold);
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+
+  .footer-text {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 500px) {
+    .features { grid-template-columns: 1fr; }
+    .input-row { flex-direction: column; }
+    .quality-grid { grid-template-columns: repeat(3, 1fr); }
+    .thumb-hero, .thumb-placeholder { height: 160px; }
+    header { padding: 48px 0 40px; }
+    .input-card { padding: 24px 20px; }
+    .download-section { padding: 20px; }
+    .video-info-bar { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="crown">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 19h20v2H2v-2zm0-3l4-8 4 4 4-6 4 10H2z"/>
+      </svg>
+    </div>
+    <div class="logo">San <span>Mate</span></div>
+    <div class="logo-line">
+      <span class="logo-sub">Premium Downloader</span>
+    </div>
+    <p class="tagline">YouTube &amp; Instagram · HD Quality · Free Forever</p>
+  </header>
+
+  <!-- Platform Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tab-yt" onclick="setMode('yt')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.19a3.02 3.02 0 0 0-2.12-2.14C19.55 3.5 12 3.5 12 3.5s-7.55 0-9.38.55A3.02 3.02 0 0 0 .5 6.19C0 8.03 0 12 0 12s0 3.97.5 5.81a3.02 3.02 0 0 0 2.12 2.14C4.45 20.5 12 20.5 12 20.5s7.55 0 9.38-.55a3.02 3.02 0 0 0 2.12-2.14C24 15.97 24 12 24 12s0-3.97-.5-5.81zM9.75 15.5v-7l6.5 3.5-6.5 3.5z"/></svg>
+      YouTube
+    </button>
+    <button class="tab" id="tab-ig" onclick="setMode('ig')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      Instagram
+    </button>
+  </div>
+
+  <!-- Input Card -->
+  <div class="input-card">
+    <label class="input-label" id="input-label">Paste YouTube URL</label>
+    <div class="input-row">
+      <input
+        class="url-input"
+        id="url-input"
+        type="url"
+        placeholder="https://www.youtube.com/watch?v=..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="btn-fetch" id="btn-fetch" onclick="handleFetch()">
+        <span id="btn-text">Analyse</span>
+        <span class="spinner" id="spinner"></span>
+      </button>
+    </div>
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <!-- Result Card -->
+  <div class="result-card" id="result-card">
+
+    <!-- Thumbnail -->
+    <div id="thumb-wrap">
+      <div class="thumb-placeholder" id="thumb-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2a2a35" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </div>
+    </div>
+
+    <!-- Video Info -->
+    <div class="video-info-bar">
+      <div class="platform-tag" id="platform-tag">YouTube</div>
+      <div class="video-title" id="video-title">—</div>
+      <div class="video-meta" id="video-meta">—</div>
+    </div>
+
+    <!-- Download Options -->
+    <div class="download-section" id="download-section">
+
+      <!-- YouTube options -->
+      <div id="yt-options">
+        <div class="section-title">Video Quality</div>
+        <div class="quality-grid" id="quality-grid"></div>
+
+        <div class="section-title">Audio Only</div>
+        <div class="audio-strip">
+          <button class="audio-btn" onclick="downloadAudio('mp3')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span class="a-title">MP3 — Music / Podcast</span>
+            <span class="a-badge">MP3</span>
+          </button>
+          <button class="audio-btn" onclick="downloadAudio('m4a')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span class="a-title">M4A — High Quality Audio</span>
+            <span class="a-badge">M4A</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Instagram options -->
+      <div id="ig-options" style="display:none">
+        <div class="section-title">Download</div>
+        <div class="audio-strip" id="ig-single" style="display:none">
+          <button class="audio-btn" onclick="triggerDownload()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="a-title">Download Video</span>
+            <span class="a-badge">MP4</span>
+          </button>
+        </div>
+        <div class="picker-grid" id="picker-grid" style="display:none"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Instant</div>
+      <div class="feat-desc">Direct stream extraction, no waiting</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🎯</div>
+      <div class="feat-title">All Formats</div>
+      <div class="feat-desc">360p to 4K, MP3 & M4A audio</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔒</div>
+      <div class="feat-title">Private</div>
+      <div class="feat-desc">No tracking, no registration</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-logo">San Mate</div>
+    <p class="footer-text">For personal use only &nbsp;·&nbsp; Respect creators' copyright</p>
+  </footer>
+
+</div>
+
+<script>
+  const SUPABASE_URL = "https://ykcsscajcabakozppbqi.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrY3NzY2FqY2FiYWtvenBwYnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxODIyNTUsImV4cCI6MjA5Mjc1ODI1NX0.uXi_SnoOZQ-SZ5qBtDlijKaSzBtRfLvCsbM8hlxhPvg";
+  const EDGE_FN = `${SUPABASE_URL}/functions/v1/smart-task`;
+
+  const YT_QUALITIES = [
+    { label: "4K", sub: "2160p", q: "2160" },
+    { label: "1080p", sub: "Full HD", q: "1080" },
+    { label: "720p", sub: "HD", q: "720" },
+    { label: "480p", sub: "SD", q: "480" },
+    { label: "360p", sub: "Low", q: "360" },
+  ];
+
+  let mode = "yt";
+  let downloadUrl = null;
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById("tab-yt").className = "tab" + (m === "yt" ? " active" : "");
+    document.getElementById("tab-ig").className = "tab" + (m === "ig" ? " active" : "");
+    document.getElementById("url-input").placeholder = m === "yt"
+      ? "https://www.youtube.com/watch?v=..."
+      : "https://www.instagram.com/p/... or /reel/...";
+    document.getElementById("input-label").textContent = m === "yt" ? "Paste YouTube URL" : "Paste Instagram URL";
+    hideResult();
+    hideError();
+    document.getElementById("url-input").value = "";
+  }
+
+  document.getElementById("url-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") handleFetch();
+  });
+
+  async function handleFetch() {
+    const url = document.getElementById("url-input").value.trim();
+    hideError();
+    hideResult();
+
+    if (!url) { showError("Please paste a URL first."); return; }
+
+    const isYt = /youtube\.com|youtu\.be/i.test(url);
+    const isIg = /instagram\.com/i.test(url);
+    if (mode === "yt" && !isYt) { showError("That doesn't look like a YouTube URL."); return; }
+    if (mode === "ig" && !isIg) { showError("That doesn't look like an Instagram URL."); return; }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(EDGE_FN, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ url, quality: "720", audioOnly: false }),
+      });
+
+      const rawText = await res.text();
+      let data;
+      try { data = JSON.parse(rawText); }
+      catch(e) {
+        showError(`[HTTP ${res.status}] ${rawText.slice(0, 400)}`);
+        setLoading(false); return;
+      }
+
+      if (!res.ok || data.error) {
+        showError(`[HTTP ${res.status}] ${JSON.stringify(data)}`);
+        setLoading(false); return;
+      }
+
+      handleResponse(data, url);
+
+    } catch(err) {
+      showError(`Error: ${err.message}`);
+    }
+
+    setLoading(false);
+  }
+
+  function handleResponse(data, originalUrl) {
+    if (data.status === "error") {
+      showError("Error: " + JSON.stringify(data.error));
+      return;
+    }
+
+    // Show thumbnail
+    const thumbWrap = document.getElementById("thumb-wrap");
+    if (data.thumb) {
+      thumbWrap.innerHTML = `<img class="thumb-hero" src="${data.thumb}" alt="thumbnail" onerror="this.style.display='none'">`;
+    }
+
+    // Video info
+    document.getElementById("platform-tag").textContent = mode === "yt" ? "YouTube" : "Instagram";
+    document.getElementById("video-title").textContent = data.title || (mode === "yt" ? "YouTube Video" : "Instagram Video");
+    document.getElementById("video-meta").textContent = originalUrl;
+
+    if (mode === "yt") {
+      showYTOptions(data.url);
+    } else {
+      showIGOptions(data);
+    }
+
+    document.getElementById("result-card").classList.add("show");
+  }
+
+  function showYTOptions(baseUrl) {
+    downloadUrl = baseUrl;
+    document.getElementById("yt-options").style.display = "block";
+    document.getElementById("ig-options").style.display = "none";
+
+    const grid = document.getElementById("quality-grid");
+    grid.innerHTML = "";
+
+    YT_QUALITIES.forEach(q => {
+      const btn = document.createElement("button");
+      btn.className = "quality-btn";
+      btn.innerHTML = `<span class="q-label">${q.label}</span><span class="q-sub">${q.sub}</span>`;
+      btn.onclick = () => downloadQuality(q.q);
+      grid.appendChild(btn);
+    });
+  }
+
+  function showIGOptions(data) {
+    document.getElementById("yt-options").style.display = "none";
+    document.getElementById("ig-options").style.display = "block";
+
+    if (data.status === "picker" && data.picker) {
+      document.getElementById("ig-single").style.display = "none";
+      const pickerGrid = document.getElementById("picker-grid");
+      pickerGrid.style.display = "grid";
+      pickerGrid.innerHTML = "";
+
+      data.picker.forEach((item, i) => {
+        const a = document.createElement("a");
+        a.href = item.url;
+        a.target = "_blank";
+        a.className = "picker-item";
+        a.innerHTML = `
+          <img class="picker-thumb" src="${item.thumb || ''}" alt="Item ${i+1}" onerror="this.style.display='none'">
+          <div class="picker-label">${item.type === "photo" ? "🖼 Photo" : `▶ Video ${i+1}`}</div>
+        `;
+        pickerGrid.appendChild(a);
+      });
+    } else {
+      downloadUrl = data.url;
+      document.getElementById("ig-single").style.display = "block";
+      document.getElementById("picker-grid").style.display = "none";
+    }
+  }
+
+  async function downloadQuality(quality) {
+    const url = document.getElementById("url-input").value.trim();
+    setLoading(true);
+
+    try {
+      const res = await fetch(EDGE_FN, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ url, quality, audioOnly: false }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        openDownload(data.url);
+      } else {
+        showError("Could not get download link: " + JSON.stringify(data));
+      }
+    } catch(err) {
+      showError("Error: " + err.message);
+    }
+
+    setLoading(false);
+  }
+
+  async function downloadAudio(format) {
+    const url = document.getElementById("url-input").value.trim();
+    setLoading(true);
+
+    try {
+      const res = await fetch(EDGE_FN, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ url, quality: "720", audioOnly: true, format }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        openDownload(data.url);
+      } else {
+        showError("Could not get audio link: " + JSON.stringify(data));
+      }
+    } catch(err) {
+      showError("Error: " + err.message);
+    }
+
+    setLoading(false);
+  }
+
+  function triggerDownload() {
+    if (downloadUrl) openDownload(downloadUrl);
+  }
+
+  function openDownload(url) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.click();
+  }
+
+  function setLoading(on) {
+    document.getElementById("btn-fetch").disabled = on;
+    document.getElementById("btn-text").style.display = on ? "none" : "";
+    document.getElementById("spinner").className = "spinner" + (on ? " show" : "");
+  }
+
+  function showError(msg) {
+    if (typeof msg === "object") msg = JSON.stringify(msg, null, 2);
+    const el = document.getElementById("error-box");
+    el.textContent = "⚠ " + msg;
+    el.classList.add("show");
+  }
+
+  function hideError() {
+    document.getElementById("error-box").classList.remove("show");
+  }
+
+  function showResult() {
+    document.getElementById("result-card").classList.add("show");
+  }
+
+  function hideResult() {
+    document.getElementById("result-card").classList.remove("show");
+    document.getElementById("thumb-wrap").innerHTML = `<div class="thumb-placeholder" id="thumb-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2a2a35" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>`;
+    downloadUrl = null;
+  }
+</script>
+</body>
+</html>
