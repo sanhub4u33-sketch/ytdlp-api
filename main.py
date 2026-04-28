@@ -57,7 +57,8 @@ def download():
         if audio_only:
             fmt = "bestaudio/best"
         else:
-            fmt = "bestvideo[height<={}][ext=mp4]+bestaudio[ext=m4a]/best[height<={}][ext=mp4]/best".format(quality, quality)
+            # Use best available format — no strict format filtering
+            fmt = "best[ext=mp4]/best"
 
         ydl_opts = {
             "format": fmt,
