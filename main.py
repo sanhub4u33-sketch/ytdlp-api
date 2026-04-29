@@ -11,6 +11,11 @@ HEADERS = {
 }
 
 
+@app.route("/")
+def index():
+    return jsonify({"status": "SAN MATE yt-dlp API running"})
+
+
 @app.route("/check")
 def check():
     exists = os.path.exists(COOKIES_FILE)
@@ -27,6 +32,41 @@ def check():
     })
 
 
+@app.route("/test")
+def test():
+    try:
+        ydl_opts = {
+            "quiet": False,
+            "no_warnings": True,
+            "http_headers": HEADERS,
+            "cookiefile": COOKIES_FILE,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(
+                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                download=False
+            )
+            formats = info.get("formats", [])
+            return jsonify({
+                "success": True,
+                "title": info.get("title"),
+                "format_count": len(formats),
+                "sample_formats": [
+                    {
+                        "format_id": f.get("format_id"),
+                        "ext": f.get("ext"),
+                        "height": f.get("height"),
+                        "acodec": f.get("acodec"),
+                        "vcodec": f.get("vcodec"),
+                        "has_url": bool(f.get("url")),
+                    }
+                    for f in formats[-5:]
+                ]
+            })
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 @app.route("/download", methods=["POST"])
 def download():
     body = request.get_json()
@@ -40,20 +80,13 @@ def download():
         "quiet": True,
         "no_warnings": True,
         "http_headers": HEADERS,
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["tv_embedded", "web", "android"],
-            }
-        },
     }
 
     if os.path.exists(COOKIES_FILE):
         base_opts["cookiefile"] = COOKIES_FILE
 
     try:
-        # Step 1 — list all available formats first
-        list_opts = {**base_opts, "listformats": False}
-        with yt_dlp.YoutubeDL(list_opts) as ydl:
+        with yt_dlp.YoutubeDL(base_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
             if "entries" in info:
@@ -65,28 +98,24 @@ def download():
                 return jsonify({"error": "No formats found"}), 500
 
             if audio_only:
-                # Pick best audio only format
                 audio_formats = [f for f in formats if f.get("vcodec") == "none" and f.get("url")]
                 chosen = audio_formats[-1] if audio_formats else formats[-1]
             else:
-                # Pick best combined video+audio format (has both vcodec and acodec)
                 combined = [
                     f for f in formats
-                    if f.get("vcodec") != "none"
-                    and f.get("acodec") != "none"
+                    if f.get("vcodec") not in ("none", None)
+                    and f.get("acodec") not in ("none", None)
                     and f.get("url")
                 ]
                 if combined:
-                    # Sort by height descending, pick best
                     combined.sort(key=lambda f: f.get("height") or 0, reverse=True)
                     chosen = combined[0]
                 else:
-                    # Fallback: just pick last format which is usually best
                     chosen = formats[-1]
 
             video_url = chosen.get("url")
             if not video_url:
-                return jsonify({"error": "Could not get URL from format"}), 500
+                return jsonify({"error": "No URL in chosen format"}), 500
 
             return jsonify({
                 "status": "redirect",
