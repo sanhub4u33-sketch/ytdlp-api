@@ -4,7 +4,11 @@ import os
 
 app = Flask(__name__)
 
-COOKIES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cookies.txt")
+COOKIES_FILE = "/app/cookies.txt"
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+}
 
 
 @app.route("/check")
@@ -27,37 +31,70 @@ def check():
 def download():
     body = request.get_json()
     url = body.get("url")
-    quality = body.get("quality", "720")
     audio_only = body.get("audioOnly", False)
 
     if not url:
         return jsonify({"error": "url required"}), 400
 
+    base_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "http_headers": HEADERS,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["tv_embedded", "web", "android"],
+            }
+        },
+    }
+
+    if os.path.exists(COOKIES_FILE):
+        base_opts["cookiefile"] = COOKIES_FILE
+
     try:
-        if audio_only:
-            fmt = "bestaudio/best"
-        else:
-            fmt = "bestvideo[height<={}][ext=mp4]+bestaudio[ext=m4a]/best[height<={}][ext=mp4]/best".format(quality, quality)
-
-        ydl_opts = {
-            "format": fmt,
-            "quiet": True,
-            "no_warnings": True,
-            "cookiefile": COOKIES_FILE,
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        # Step 1 — list all available formats first
+        list_opts = {**base_opts, "listformats": False}
+        with yt_dlp.YoutubeDL(list_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            if "requested_formats" in info:
-                video_url = info["requested_formats"][0]["url"]
+
+            if "entries" in info:
+                info = info["entries"][0]
+
+            formats = info.get("formats", [])
+
+            if not formats:
+                return jsonify({"error": "No formats found"}), 500
+
+            if audio_only:
+                # Pick best audio only format
+                audio_formats = [f for f in formats if f.get("vcodec") == "none" and f.get("url")]
+                chosen = audio_formats[-1] if audio_formats else formats[-1]
             else:
-                video_url = info.get("url")
+                # Pick best combined video+audio format (has both vcodec and acodec)
+                combined = [
+                    f for f in formats
+                    if f.get("vcodec") != "none"
+                    and f.get("acodec") != "none"
+                    and f.get("url")
+                ]
+                if combined:
+                    # Sort by height descending, pick best
+                    combined.sort(key=lambda f: f.get("height") or 0, reverse=True)
+                    chosen = combined[0]
+                else:
+                    # Fallback: just pick last format which is usually best
+                    chosen = formats[-1]
+
+            video_url = chosen.get("url")
+            if not video_url:
+                return jsonify({"error": "Could not get URL from format"}), 500
 
             return jsonify({
                 "status": "redirect",
                 "url": video_url,
                 "title": info.get("title"),
                 "thumb": info.get("thumbnail"),
+                "duration": info.get("duration"),
+                "uploader": info.get("uploader") or info.get("channel"),
             })
 
     except Exception as e:
