@@ -36,10 +36,11 @@ def check():
 def test():
     try:
         ydl_opts = {
-            "quiet": False,
+            "quiet": True,
             "no_warnings": True,
             "http_headers": HEADERS,
             "cookiefile": COOKIES_FILE,
+            "check_formats": False,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(
@@ -51,7 +52,7 @@ def test():
                 "success": True,
                 "title": info.get("title"),
                 "format_count": len(formats),
-                "sample_formats": [
+                "formats": [
                     {
                         "format_id": f.get("format_id"),
                         "ext": f.get("ext"),
@@ -60,7 +61,7 @@ def test():
                         "vcodec": f.get("vcodec"),
                         "has_url": bool(f.get("url")),
                     }
-                    for f in formats[-5:]
+                    for f in formats
                 ]
             })
     except Exception as e:
@@ -80,6 +81,7 @@ def download():
         "quiet": True,
         "no_warnings": True,
         "http_headers": HEADERS,
+        "check_formats": False,
     }
 
     if os.path.exists(COOKIES_FILE):
@@ -98,7 +100,10 @@ def download():
                 return jsonify({"error": "No formats found"}), 500
 
             if audio_only:
-                audio_formats = [f for f in formats if f.get("vcodec") == "none" and f.get("url")]
+                audio_formats = [
+                    f for f in formats
+                    if f.get("vcodec") == "none" and f.get("url")
+                ]
                 chosen = audio_formats[-1] if audio_formats else formats[-1]
             else:
                 combined = [
@@ -133,3 +138,4 @@ def download():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
+                    
